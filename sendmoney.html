@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Enviar Dinero</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card shadow card-wallet">
+
+        <div class="card-body">
+
+            <h2 class="text-center">
+                Enviar Dinero
+            </h2>
+
+            <p class="text-center text-muted">
+                Saldo disponible: <strong id="saldoDisponible">$0</strong>
+            </p>
+
+            <div id="alertContainer"></div>
+
+            <div class="input-group mb-3">
+
+                <input type="text"
+                       id="buscarContacto"
+                       class="form-control"
+                       placeholder="Buscar contacto"
+                       oninput="filtrarContactos()">
+
+                <button class="btn btn-primary" type="button" onclick="filtrarContactos()">
+                    Buscar
+                </button>
+
+            </div>
+
+            <button class="btn btn-success w-100"
+                    data-bs-toggle="modal"
+                    data-bs-target="#nuevoContacto">
+
+                Agregar nuevo contacto
+
+            </button>
+
+            <h6 class="mt-4 mb-2">Tus contactos</h6>
+
+            <div id="listaContactos" class="list-group mb-3">
+                <!-- generado dinámicamente con JavaScript -->
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Monto a enviar</label>
+                <input type="number"
+                       id="montoEnvio"
+                       class="form-control"
+                       placeholder="$0"
+                       min="1">
+            </div>
+
+            <button type="button" class="btn btn-warning w-100" onclick="enviarDinero()">
+                Enviar dinero
+            </button>
+
+            <!-- Modal -->
+
+            <div class="modal fade"
+                 id="nuevoContacto">
+
+                <div class="modal-dialog">
+
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <h5>Nuevo Contacto</h5>
+                            <button class="btn-close"
+                                    data-bs-dismiss="modal">
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div id="alertModal"></div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Nombre y apellido</label>
+                                <input type="text"
+                                       id="nombreContacto"
+                                       class="form-control"
+                                       placeholder="Ej: Juana Pérez">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">CBU</label>
+                                <input type="text"
+                                       id="cbuContacto"
+                                       class="form-control"
+                                       placeholder="22 dígitos"
+                                       maxlength="22">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Alias</label>
+                                <input type="text"
+                                       id="aliasContacto"
+                                       class="form-control"
+                                       placeholder="Ej: juana.perez.banco">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Nombre del Banco</label>
+                                <input type="text"
+                                       id="bancoContacto"
+                                       class="form-control"
+                                       placeholder="Ej: Banco Nación">
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+
+                            <button class="btn btn-success" onclick="guardarContacto()">
+                                Guardar
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <a href="menu.html"
+               class="btn btn-secondary w-100 mt-3">
+                Volver
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="wallet.js"></script>
+<script>
+    let contactoSeleccionado = null;
+
+    function renderContactos(filtro) {
+        filtro = filtro || '';
+        const contactos = getContactos();
+        const $contenedor = $('#listaContactos');
+        const filtrados = contactos.filter(function (c) {
+            return c.nombre.toLowerCase().includes(filtro.toLowerCase());
+        });
+
+        if (filtrados.length === 0) {
+            $contenedor.html('<p class="text-muted">No hay contactos para mostrar. Agregá uno nuevo arriba.</p>');
+            return;
+        }
+
+        $contenedor.html(filtrados.map(function (c) {
+            const indexReal = contactos.indexOf(c);
+            const activo = contactoSeleccionado === indexReal ? 'active' : '';
+            return (
+                '<button type="button" class="list-group-item list-group-item-action ' + activo + '" onclick="seleccionarContacto(' + indexReal + ')">' +
+                    '<strong>' + c.nombre + '</strong><br>' +
+                    '<small>' + c.banco + ' · Alias: ' + c.alias + '</small>' +
+                '</button>'
+            );
+        }).join(''));
+    }
+
+    function seleccionarContacto(index) {
+        contactoSeleccionado = index;
+        renderContactos($('#buscarContacto').val());
+    }
+
+    function filtrarContactos() {
+        renderContactos($('#buscarContacto').val());
+    }
+
+    function guardarContacto() {
+        const nombre = $('#nombreContacto').val().trim();
+        const cbu = $('#cbuContacto').val().trim();
+        const alias = $('#aliasContacto').val().trim();
+        const banco = $('#bancoContacto').val().trim();
+
+        if (!nombre || !cbu || !alias || !banco) {
+            mostrarAlerta('alertModal', 'Completá todos los campos.', 'warning');
+            return;
+        }
+
+        if (!/^\d{22}$/.test(cbu)) {
+            mostrarAlerta('alertModal', 'El CBU debe tener exactamente 22 dígitos numéricos.', 'warning');
+            return;
+        }
+
+        addContacto({ nombre: nombre, cbu: cbu, alias: alias, banco: banco });
+
+        $('#nombreContacto').val('');
+        $('#cbuContacto').val('');
+        $('#aliasContacto').val('');
+        $('#bancoContacto').val('');
+        $('#alertModal').html('');
+
+        const modalEl = document.getElementById('nuevoContacto');
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.hide();
+
+        renderContactos();
+        mostrarAlerta('alertContainer', 'Contacto "' + nombre + '" agregado correctamente.', 'success');
+    }
+
+    function enviarDinero() {
+        const montoInput = $('#montoEnvio');
+        const monto = parseFloat(montoInput.val());
+        const contactos = getContactos();
+
+        if (contactoSeleccionado === null || !contactos[contactoSeleccionado]) {
+            mostrarAlerta('alertContainer', 'Seleccioná un contacto de la lista antes de enviar dinero.', 'warning');
+            return;
+        }
+
+        if (!montoInput.val() || isNaN(monto) || monto <= 0) {
+            mostrarAlerta('alertContainer', 'Ingresá un monto válido mayor a $0.', 'warning');
+            return;
+        }
+
+        const saldoActual = getSaldo();
+        if (monto > saldoActual) {
+            mostrarAlerta('alertContainer', 'No tenés saldo suficiente para esta operación.', 'danger');
+            return;
+        }
+
+        const destino = contactos[contactoSeleccionado];
+        const nuevoSaldo = saldoActual - monto;
+        setSaldo(nuevoSaldo);
+        addMovimiento({
+            tipo: 'Envío',
+            detalle: 'Envío a ' + destino.nombre + ' (' + destino.banco + ')',
+            monto: -monto,
+            fecha: fechaActual()
+        });
+
+        $('#saldoDisponible').text(formatCurrency(nuevoSaldo));
+        mostrarAlerta('alertContainer', 'Enviaste ' + formatCurrency(monto) + ' a ' + destino.nombre + '. Nuevo saldo: ' + formatCurrency(nuevoSaldo), 'success');
+
+        montoInput.val('');
+        contactoSeleccionado = null;
+        renderContactos();
+    }
+
+    $(function () {
+        $('#saldoDisponible').text(formatCurrency(getSaldo()));
+        renderContactos();
+    });
+</script>
+
+</body>
+</html>

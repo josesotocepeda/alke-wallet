@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Depositar</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card shadow card-wallet">
+
+        <div class="card-body">
+
+            <h2 class="text-center">
+                Depositar
+            </h2>
+
+            <p class="text-center text-muted">
+                Saldo actual: <strong id="saldoActual">$0</strong>
+            </p>
+
+            <div id="alertContainer"></div>
+
+            <form id="depositForm">
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Monto a depositar
+                    </label>
+
+                    <input type="number"
+                           id="monto"
+                           class="form-control"
+                           placeholder="$0"
+                           min="1">
+
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">
+                    Realizar depósito
+                </button>
+
+            </form>
+
+            <a href="menu.html"
+               class="btn btn-secondary w-100 mt-3">
+                Volver
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="wallet.js"></script>
+<script>
+    $(function () {
+        $('#saldoActual').text(formatCurrency(getSaldo()));
+
+        $('#depositForm').submit(function (e) {
+            e.preventDefault();
+
+            const montoInput = $('#monto');
+            const monto = parseFloat(montoInput.val());
+
+            if (!montoInput.val() || isNaN(monto) || monto <= 0) {
+                mostrarAlerta('alertContainer', 'Ingresá un monto válido mayor a $0.', 'warning');
+                return;
+            }
+
+            const nuevoSaldo = getSaldo() + monto;
+            setSaldo(nuevoSaldo);
+            addMovimiento({
+                tipo: 'Depósito',
+                detalle: 'Depósito a tu cuenta',
+                monto: monto,
+                fecha: fechaActual()
+            });
+
+            $('#saldoActual').text(formatCurrency(nuevoSaldo));
+            mostrarAlerta('alertContainer', 'Depósito realizado con éxito. Nuevo saldo: ' + formatCurrency(nuevoSaldo), 'success');
+            montoInput.val('');
+        });
+    });
+</script>
+
+</body>
+</html>
